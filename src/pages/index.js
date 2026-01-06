@@ -1,115 +1,271 @@
-import Image from "next/image";
-import localFont from "next/font/local";
+"use client";
+import { useState } from "react";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+export default function HeapStepVisualizer() {
+  const initialArray = [4, 10, 3, 5, 1, 2, 8, 7, 6, 9];
 
-export default function Home() {
+  const [array, setArray] = useState([...initialArray]);
+  const [heapType, setHeapType] = useState("");
+  const [active, setActive] = useState([]);
+  const [stack, setStack] = useState([]);
+  const [heapSize, setHeapSize] = useState(initialArray.length); // Tracks unsorted portion
+  const [message, setMessage] = useState(
+    "Choose Max Heap or Min Heap to start sorting"
+  );
+  const [phase, setPhase] = useState("idle"); // 'idle', 'building', 'sorting'
+
+  const startHeapSort = (type) => {
+    setHeapType(type);
+    setArray([...initialArray]);
+    setHeapSize(initialArray.length);
+    setPhase("building");
+
+    const n = initialArray.length;
+    const startStack = [];
+    // Start from the last non-leaf node and move up to the root
+    for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+      startStack.push(i);
+    }
+    setStack(startStack);
+    setActive([]);
+    setMessage(
+      `Phase 1: Building ${
+        type === "max" ? "Max" : "Min"
+      } Heap. Starting from index ${startStack[0]} (last non-leaf node).`
+    );
+  };
+
+  const nextStep = () => {
+    let arr = [...array];
+    let currentStack = [...stack];
+    let n = heapSize;
+
+    if (phase === "building") {
+      if (currentStack.length === 0) {
+        setPhase("sorting");
+        setMessage(
+          "Heap structure complete! Phase 2: Swapping root to the end to sort."
+        );
+        return;
+      }
+
+      let i = currentStack[0];
+      let target = i;
+      let left = 2 * i + 1;
+      let right = 2 * i + 2;
+
+      // Logic for picking the child to swap with
+      if (
+        left < n &&
+        (heapType === "max" ? arr[left] > arr[target] : arr[left] < arr[target])
+      )
+        target = left;
+      if (
+        right < n &&
+        (heapType === "max"
+          ? arr[right] > arr[target]
+          : arr[right] < arr[target])
+      )
+        target = right;
+
+      setActive([i, left, right].filter((idx) => idx < n));
+
+      if (target !== i) {
+        const reason =
+          heapType === "max"
+            ? `Child ${arr[target]} is larger than parent ${arr[i]}`
+            : `Child ${arr[target]} is smaller than parent ${arr[i]}`;
+
+        setMessage(`Swap: ${reason}. Sifting ${arr[i]} down.`);
+        [arr[i], arr[target]] = [arr[target], arr[i]];
+        setArray(arr);
+        currentStack[0] = target;
+      } else {
+        setMessage(
+          `Index ${i} (${arr[i]}) already satisfies the ${heapType} heap property relative to its children.`
+        );
+        currentStack.shift();
+      }
+      setStack(currentStack);
+    } else if (phase === "sorting") {
+      if (currentStack.length > 0) {
+        let i = currentStack[0];
+        let target = i;
+        let left = 2 * i + 1;
+        let right = 2 * i + 2;
+
+        if (
+          left < n &&
+          (heapType === "max"
+            ? arr[left] > arr[target]
+            : arr[left] < arr[target])
+        )
+          target = left;
+        if (
+          right < n &&
+          (heapType === "max"
+            ? arr[right] > arr[target]
+            : arr[right] < arr[target])
+        )
+          target = right;
+
+        setActive([i, left, right].filter((idx) => idx < n));
+
+        if (target !== i) {
+          setMessage(
+            `Sifting down: Moving ${arr[i]} deeper to restore heap property.`
+          );
+          [arr[i], arr[target]] = [arr[target], arr[i]];
+          setArray(arr);
+          currentStack[0] = target;
+        } else {
+          setMessage(
+            `Heap property restored at root. Ready for next extraction.`
+          );
+          currentStack.shift();
+        }
+        setStack(currentStack);
+      } else if (n > 1) {
+        const lastIdx = n - 1;
+        const extremeValue = heapType === "max" ? "largest" : "smallest";
+        setMessage(
+          `EXTRACT: Moving ${extremeValue} element (${arr[0]}) to index ${lastIdx} (final sorted position).`
+        );
+        [arr[0], arr[lastIdx]] = [arr[lastIdx], arr[0]];
+
+        const newSize = n - 1;
+        setHeapSize(newSize);
+        setArray(arr);
+        setStack([0]);
+        setActive([0, lastIdx]);
+      } else {
+        setPhase("idle");
+        setMessage("✅ Success: Array is fully sorted!");
+        setActive([]);
+        setHeapSize(0); // Mark last element as sorted/green
+      }
+    }
+  };
+
+  const reset = () => {
+    setArray([...initialArray]);
+    setHeapType("");
+    setActive([]);
+    setStack([]);
+    setHeapSize(initialArray.length);
+    setPhase("idle");
+    setMessage("Choose Max Heap or Min Heap to start sorting");
+  };
+
   return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/pages/index.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div style={{ padding: 30, fontFamily: "sans-serif" }}>
+      <h1>Heap Sort Visualizer</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <div
+        style={{
+          background: "#cccc",
+          padding: 15,
+          borderRadius: 8,
+          marginBottom: 20,
+        }}
+      >
+        <p>
+          <b>Status:</b> {message}
+        </p>
+        <p>
+          <b>Indices to check:</b>{" "}
+          {stack.length > 0 ? stack.join(", ") : "None"}
+        </p>
+        <p>
+          <b>Heap Size:</b> {heapSize} / {array.length}
+        </p>
+      </div>
+
+      <div
+        style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 30 }}
+      >
+        {array.map((value, i) => (
+          <div
+            key={i}
+            style={{
+              width: 50,
+              height: 50,
+              background:
+                i >= heapSize
+                  ? "#10b981" // Green for sorted
+                  : active.includes(i)
+                  ? "#ef4444" // Red for active
+                  : "#60a5fa", // Blue for unsorted heap
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 8,
+              fontSize: 18,
+              fontWeight: "bold",
+              transition: "0.3s",
+              position: "relative",
+              opacity: i >= heapSize ? 0.8 : 1,
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+            {value}
+            <span
+              style={{
+                position: "absolute",
+                bottom: -20,
+                fontSize: 10,
+                color: "#666",
+              }}
+            >
+              idx {i}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button
+          onClick={() => startHeapSort("max")}
+          disabled={phase !== "idle"}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Sort Ascending (Max Heap)
+        </button>
+        <button
+          onClick={() => startHeapSort("min")}
+          disabled={phase !== "idle"}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Sort Descending (Min Heap)
+        </button>
+        <button
+          onClick={nextStep}
+          style={{ padding: "5px 20px", fontWeight: "bold", fontSize: 16 }}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Next Step ▶
+        </button>
+        <button onClick={reset}>Reset</button>
+      </div>
+
+      <div
+        style={{ marginTop: 40, borderTop: "1px solid #ddd", paddingTop: 20 }}
+      >
+        <p>
+          <b>How it works:</b>
+        </p>
+        <ul style={{ fontSize: 14, color: "#444" }}>
+          <li>
+            <b>Max Heap + Sort:</b> Results in a <b>[1, 2, 3...]</b> sorted
+            array.
+          </li>
+          <li>
+            <b>Min Heap + Sort:</b> Results in a <b>[10, 9, 8...]</b> sorted
+            array.
+          </li>
+          <li>
+            The <b>Green</b> boxes represent elements already locked into their
+            final sorted positions.
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }
