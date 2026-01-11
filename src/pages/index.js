@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { twMerge } from "tailwind-merge";
 
 export default function HeapStepVisualizer() {
   const initialArray = [4, 10, 3, 5, 1, 2, 8, 7, 6, 9];
@@ -225,12 +226,24 @@ export default function HeapStepVisualizer() {
 
       <div style={{ display: "flex", gap: 10 }}>
         <button
+          className={twMerge(
+            heapType !== "min"
+              ? "bg-green-500 text-white"
+              : "cursor-not-allowed bg-slate-400 text-gray-200",
+            "px-4 py-2 rounded"
+          )}
           onClick={() => startHeapSort("max")}
           disabled={phase !== "idle"}
         >
           Sort Ascending (Max Heap)
         </button>
         <button
+          className={twMerge(
+            heapType !== "max"
+              ? "bg-green-500 text-white"
+              : "cursor-not-allowed bg-slate-400 text-gray-200",
+            "px-4 py-2 rounded"
+          )}
           onClick={() => startHeapSort("min")}
           disabled={phase !== "idle"}
         >
@@ -238,11 +251,21 @@ export default function HeapStepVisualizer() {
         </button>
         <button
           onClick={nextStep}
-          style={{ padding: "5px 20px", fontWeight: "bold", fontSize: 16 }}
+          className={twMerge(
+            heapType === ""
+              ? "bg-slate-400 text-gray-200 cursor-not-allowed "
+              : "bg-blue-500 text-white",
+            "rounded px-4 py-2"
+          )}
         >
           Next Step ▶
         </button>
-        <button onClick={reset}>Reset</button>
+        <button
+          className="px-4 py-2 rounded bg-purple-500 text-white"
+          onClick={reset}
+        >
+          Reset
+        </button>
       </div>
 
       <div
