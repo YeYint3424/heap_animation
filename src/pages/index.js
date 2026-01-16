@@ -28,7 +28,7 @@ export default function HeapStepVisualizer() {
     delayRef.current = delay;
   }, [delay]);
 
-  // Auto-play effect
+  // Auto-play effect`
   useEffect(() => {
     if (!isPlaying || phase === "idle") return;
 
@@ -513,7 +513,7 @@ export default function HeapStepVisualizer() {
         )}
 
         {/* Step Navigation */}
-        <div className="flex justify-between mt-4">
+        {/* <div className="flex justify-between mt-4">
           <button
             onClick={() => navigateStep("prev")}
             disabled={currentStepIndex === 0}
@@ -528,7 +528,7 @@ export default function HeapStepVisualizer() {
           >
             See Next Step →
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Controls */}
